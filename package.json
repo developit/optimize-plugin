@@ -1,0 +1,95 @@
+{
+  "name": "optimize-plugin",
+  "version": "3.2.0",
+  "description": "Webpack plugin to optimize bundles.",
+  "main": "dist/optimize-plugin.js",
+  "repository": "GoogleChromeLabs/optimize-plugin",
+  "scripts": {
+    "build": "microbundle --target node --format cjs --no-compress src/*.js",
+    "prepack": "npm run build",
+    "dev": "jest --verbose --watchAll",
+    "test": "npm run build && jest --verbose",
+    "release": "npm t && git commit -am $npm_package_version && git tag $npm_package_version && git push && git push --tags && npm publish"
+  },
+  "babel": {
+    "env": {
+      "test": {
+        "plugins": [
+          "transform-es2015-modules-commonjs"
+        ]
+      }
+    }
+  },
+  "eslintConfig": {
+    "extends": "eslint-config-standard",
+    "env": {
+      "browser": true,
+      "jest": true
+    },
+    "rules": {
+      "indent": [
+        "error",
+        2
+      ],
+      "semi": [
+        "error",
+        "always"
+      ]
+    }
+  },
+  "jest": {
+    "watchPathIgnorePatterns": [
+      "<rootDir>/node_modules/",
+      "<rootDir>/test/fixtures/"
+    ]
+  },
+  "files": [
+    "src",
+    "dist"
+  ],
+  "keywords": [
+    "webpack",
+    "plugin",
+    "minify",
+    "optimize"
+  ],
+  "author": "The Chromium Authors",
+  "contributors": [
+    {
+      "name": "Jason Miller",
+      "email": "developit@google.com"
+    }
+  ],
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "ast-types": "^0.13.2",
+    "babel-plugin-transform-es2015-modules-commonjs": "^6.26.2",
+    "clean-webpack-plugin": "^1.0.0",
+    "eslint": "^5.9.0",
+    "eslint-config-standard": "^12.0.0",
+    "eslint-plugin-import": "^2.14.0",
+    "eslint-plugin-node": "^8.0.0",
+    "eslint-plugin-promise": "^4.0.1",
+    "eslint-plugin-standard": "^4.0.0",
+    "jest": "^23.6.0",
+    "memory-fs": "^0.4.1",
+    "microbundle": "^0.12.0-next.8",
+    "terser-webpack-plugin": "^1.1.0",
+    "webpack": "^4.26.1"
+  },
+  "dependencies": {
+    "@babel/core": "^7.8.3",
+    "@babel/preset-modules": "^0.1.2",
+    "@rollup/plugin-commonjs": "^11.0.1",
+    "@rollup/plugin-node-resolve": "^7.0.0",
+    "core-js": "^3.6.4",
+    "jest-worker": "^25.1.0",
+    "magic-string": "^0.25.6",
+    "rollup": "^1.29.1",
+    "terser": "^4.6.3",
+    "webpack-sources": "^1.4.3"
+  },
+  "peerDependencies": {
+    "webpack": ">= 4"
+  }
+}
