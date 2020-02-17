@@ -32,7 +32,7 @@ plugins: [
 
 | Option | Type | Description
 |---|---|---
-| `concurrency` | `number|false` | Maximum number of threads to use. Default: the number of available CPUs. <br>_Pass `false` for single-threaded, sometimes faster for small projects._
+| `concurrency` | `number\|false` | Maximum number of threads to use. Default: the number of available CPUs. <br>_Pass `false` for single-threaded, sometimes faster for small projects._
 
 
 ## How does this work?
