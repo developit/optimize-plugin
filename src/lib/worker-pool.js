@@ -1,3 +1,38 @@
+import Worker from 'jest-worker';
+
+export class WorkerPool {
+  constructor ({ workerPath, concurrency }) {
+    // concurrency = 0;
+    if (concurrency === false || concurrency === 0) {
+      return { enqueue: t => require(workerPath).process(t) };
+    }
+
+    const worker = new Worker(workerPath, {
+      enableWorkerThreads: false,
+      numWorkers: concurrency
+    });
+    let pending = 0;
+    let timer;
+    function check () {
+      clearTimeout(timer);
+      if (--pending === 0) {
+        timer = setTimeout(() => {
+          worker.end();
+        }, 10);
+      }
+    }
+    worker.enqueue = task => {
+      clearTimeout(timer);
+      const p = worker.process(task);
+      pending++;
+      p.then(check);
+      return p;
+    };
+    return worker;
+  }
+}
+
+/*
 import os from 'os';
 import Worker from 'jest-worker';
 
@@ -11,13 +46,33 @@ export class WorkerPool {
     this.freeWorkers = [];
   }
 
+  // terminateAll () {
+  //   let worker;
+  //   while ((worker = this.workers.pop())) {
+  //     worker.terminate();
+  //   }
+  // }
+
+  cleanup () {
+    clearTimeout(this.cleanupTimer);
+    const worker = this.getFreeWorker();
+    if (worker) {
+      worker.end();
+      this.cleanupTimer = setTimeout(this.cleanup.bind(this), 100);
+    }
+  }
+
   getFreeWorker () {
     return this.freeWorkers.pop();
   }
 
   addWorker () {
     if (this.workers.length >= this.concurrency) return;
-    const worker = this.runInBand ? require(this.workerPath) : new Worker(this.workerPath);
+    const worker = this.runInBand ? require(this.workerPath) : new Worker(this.workerPath, {
+      enableWorkerThreads: true,
+      numWorkers: 1
+      // maxRetries: 0
+    });
     this.workers.push(worker);
     return worker;
   }
@@ -31,7 +86,11 @@ export class WorkerPool {
   }
 
   async process () {
-    if (!this.queue.length) return;
+    clearTimeout(this.cleanupTimer);
+    if (!this.queue.length) {
+      this.cleanupTimer = setTimeout(this.cleanup.bind(this), 100);
+      return;
+    }
     const worker = this.getFreeWorker() || this.addWorker();
     if (!worker) {
       console.log('queue full');
@@ -60,3 +119,4 @@ export class WorkerPool {
 //     return require(this.workerPath);
 //   }
 // }
+*/

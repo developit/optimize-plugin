@@ -14,7 +14,8 @@
  * the License.
  */
 
-console.log('hello world');
-// /** @jsx h */
-// const h = (type, props, ...children) => ({ type, props, children });
-// console.log(<div>yes</div>);
+import * as util from './util';
+import PinchZoom from './pinch-zoom';
+
+console.log(util, PinchZoom);
+document.body.appendChild(document.createElement('pinch-zoom'));

@@ -15,15 +15,50 @@
  */
 
 import path from 'path';
+import { gzip as gzipSync } from 'zlib';
+import util from 'util';
 import webpack from 'webpack';
 import CleanPlugin from 'clean-webpack-plugin';
-import TerserPlugin from 'terser-webpack-plugin';
+// import TerserPlugin from 'terser-webpack-plugin';
 
 export function sleep (ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-export function runWebpack (fixture, { output = {}, plugins = [], ...config } = {}) {
+const gzip = util.promisify(gzipSync);
+const gzipSize = async x => (await gzip(x)).byteLength;
+
+export async function printSizes (assets, name) {
+  let modernSize = 0;
+  let legacySize = 0;
+  const prettyBytes = (size) => {
+    if (size > 1500) return (size / 1000).toFixed(2) + 'kB';
+    return size + 'b';
+  };
+  const showSize = async (file) => {
+    const size = await gzipSize(assets[file]);
+    let str = `\n  ${file}: ${prettyBytes(size)}`;
+    if (file.match(/.legacy/)) {
+      legacySize += size;
+    } else {
+      modernSize += size;
+      const legacyName = file.replace(/\.js$/, '.legacy.js');
+      if (assets[legacyName]) str += await showSize(legacyName);
+    }
+    return str;
+  };
+
+  let str = `SIZES${name ? ` for ${name}` : ''}:`;
+  for (const i in assets) {
+    if (i.match(/.legacy/)) continue;
+    str += await showSize(i);
+  }
+  str += await showSize('polyfills.legacy.js');
+  str += `\n> Total: ${prettyBytes(modernSize)} - ${prettyBytes(legacySize - modernSize)} (${Math.round((legacySize - modernSize) / legacySize * 100)}%) smaller in modern browsers.`;
+  console.log(str);
+}
+
+export function runWebpack (fixture, { output = {}, plugins = [], module = {}, resolve = {}, ...config } = {}) {
   return run(callback => webpack({
     mode: 'production',
     devtool: false,
@@ -34,19 +69,24 @@ export function runWebpack (fixture, { output = {}, plugins = [], ...config } = 
       path: path.resolve(__dirname, 'fixtures', fixture, 'dist'),
       ...(output || {})
     },
-    optimization: {
-      minimizer: [
-        new TerserPlugin({
-          terserOptions: {
-            mangle: false,
-            output: {
-              beautify: true
-            }
-          },
-          sourceMap: false
-        })
-      ]
+    module: {
+      ...module,
+      rules: [].concat(module.rules || [])
     },
+    resolve,
+    // optimization: {
+    //   minimizer: [
+    //     new TerserPlugin({
+    //       terserOptions: {
+    //         mangle: false,
+    //         output: {
+    //           beautify: true
+    //         }
+    //       },
+    //       sourceMap: false
+    //     })
+    //   ]
+    // },
     plugins: [
       new CleanPlugin([
         path.resolve(__dirname, 'fixtures', fixture, 'dist', '**')
@@ -67,20 +107,20 @@ export function watchWebpack (fixture, { output, plugins, context, ...config } =
       path: path.resolve(context, 'dist'),
       ...(output || {})
     },
-    optimization: {
-      minimize: true,
-      minimizer: [
-        new TerserPlugin({
-          terserOptions: {
-            mangle: false,
-            output: {
-              beautify: true
-            }
-          },
-          sourceMap: false
-        })
-      ]
-    },
+    // optimization: {
+    //   minimize: true,
+    //   minimizer: [
+    //     new TerserPlugin({
+    //       terserOptions: {
+    //         mangle: false,
+    //         output: {
+    //           beautify: true
+    //         }
+    //       },
+    //       sourceMap: false
+    //     })
+    //   ]
+    // },
     plugins: plugins || []
   });
   // compiler.watch({});

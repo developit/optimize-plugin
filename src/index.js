@@ -14,6 +14,7 @@
  * the License.
  */
 
+import path from 'path';
 import util from 'util';
 import { gzip } from 'zlib';
 import { promises as fs } from 'fs';
@@ -21,7 +22,7 @@ import * as webpack from 'webpack';
 import { SourceMapSource, RawSource } from 'webpack-sources';
 import { rollup } from 'rollup';
 import commonjsPlugin from '@rollup/plugin-commonjs';
-// import nodeResolvePlugin from '@rollup/plugin-node-resolve';
+import nodeResolvePlugin from '@rollup/plugin-node-resolve';
 import rollupPluginTerserSimple from './lib/rollup-plugin-terser-simple';
 import rollupPluginStripComments from './lib/rollup-plugin-strip-comments';
 import { getCorejsVersion, createPerformanceTimings } from './lib/util';
@@ -69,7 +70,7 @@ export default class OptimizePlugin {
    */
   constructor (options) {
     this.options = Object.assign({}, options || {});
-    for (let i in DEFAULT_OPTIONS) {
+    for (const i in DEFAULT_OPTIONS) {
       if (this.options[i] == null) this.options[i] = DEFAULT_OPTIONS[i];
     }
 
@@ -218,28 +219,28 @@ export default class OptimizePlugin {
    * @todo Write cached polyfills chunk to disk
    */
   async generatePolyfillsChunk (polyfills, cwd, timings) {
-    const ENTRY = `\0entry`;
+    const ENTRY = '\0entry';
 
     const entryContent = polyfills.reduce((str, p) => `${str}\nimport "${p}";`, '');
 
     const COREJS = require.resolve('core-js/package.json').replace('package.json', '');
     const isCoreJsPath = /(?:^|\/)core-js\/(.+)$/;
-    const nonCoreJsPolyfills = polyfills.filter(p => !/core-js/.test(p));
+    const nonCoreJsPolyfills = polyfills.filter(p => !/(core-js|regenerator-runtime)/.test(p));
+
+    if (timings && nonCoreJsPolyfills.length) {
+      console.log(`  Bundling ${nonCoreJsPolyfills.length} unrecognized polyfills.`);
+    }
 
     const polyfillsBundle = await rollup({
       cache: this.rollupCache,
       context: 'window',
-      // inlineDynamicImports: true,
-      perf: true,
+      perf: !!timings,
       input: ENTRY,
       treeshake: {
         propertyReadSideEffects: false,
         tryCatchDeoptimization: false,
         unknownGlobalSideEffects: false
       },
-      // external: [
-      //   'core-js'
-      // ],
       plugins: [
         {
           name: 'entry',
@@ -249,9 +250,11 @@ export default class OptimizePlugin {
         {
           name: 'core-js',
           resolveId (id) {
+            if (/^regenerator-runtime(\/|$)/.test(id)) {
+              return require.resolve('regenerator-runtime/runtime');
+            }
             const m = id.match(isCoreJsPath);
             if (m && !/\.js$/.test(id)) {
-              // console.log(COREJS + m[1] + '.js');
               return COREJS + m[1] + '.js';
             }
             return null;
@@ -266,20 +269,33 @@ export default class OptimizePlugin {
         },
         // coreJsPlugin(),
         commonjsPlugin({
-          sourceMap: false,
-          ignoreGlobal: true
+          // ignoreGlobal: true,
+          sourceMap: false
         }),
-        // nodeResolvePlugin({
-        //   dedupe: polyfills,
-        //   preferBuiltins: false,
-        //   rootDir: cwd
-        // }),
-        nonCoreJsPolyfills.length ? nodeResolvePlugin({
-          dedupe: polyfills,
-          preferBuiltins: false,
-          rootDir: cwd,
-          only: nonCoreJsPolyfills
-        }) : null,
+        nonCoreJsPolyfills.length && nodeResolvePlugin({
+          dedupe: nonCoreJsPolyfills,
+          only: nonCoreJsPolyfills,
+          preferBuiltins: false
+          // rootDir: cwd,
+          // customResolveOptions: {
+          //   paths: [
+          //     path.resolve(__dirname, '../node_modules')
+          //   ]
+          // }
+        }),
+        // {
+        //   name: 'babel',
+        //   renderChunk (source) {
+        //     return require('@babel/core').transformAsync(source, {
+        //       sourceMaps: false,
+        //       minified: true,
+        //       shouldPrintComment: () => false,
+        //       presets: [
+        //         require('../../babel-preset-optimize')
+        //       ]
+        //     });
+        //   }
+        // },
         this.options.minify ? (
           rollupPluginTerserSimple()
         ) : (
@@ -300,15 +316,17 @@ export default class OptimizePlugin {
     });
     const output = result.output[0];
 
-    const times = polyfillsBundle.getTimings();
-    // console.log(times);
-    const add = (name, timing) => {
-      const t = times[timing];
-      if (t) timings.push({ depth: 2, name, duration: t[0] });
-    };
-    add('parse', '## parse modules');
-    add('node-resolve', '- plugin 2 (node-resolve) - resolveId (async)');
-    add('generate', '# GENERATE');
+    // If verbose logging is enabled, bubble up some useful Rollup time information
+    if (timings) {
+      const times = polyfillsBundle.getTimings();
+      const add = (name, timing) => {
+        const t = times[timing];
+        if (t) timings.push({ depth: 2, name, duration: t[0] });
+      };
+      add('parse', '## parse modules');
+      add('node-resolve', '- plugin 2 (node-resolve) - resolveId (async)');
+      add('generate', '# GENERATE');
+    }
 
     return output;
   }
@@ -356,11 +374,18 @@ export default class OptimizePlugin {
     }, '');
     polyfillsStr = polyfillsStr.replace(/├(.*?)$/, '└$1');
 
-    const polyfillsSize = (await util.promisify(gzip)(polyfillsAsset.source())).byteLength;
+    const preamble = `[${NAME}] Completed in ${totalTime | 0}ms.${timingsStr}\n`;
+
+    if (!polyfillsAsset) {
+      console.log(preamble + 'No polyfills bundle was created.');
+      return;
+    }
+
+    const polyfillsSize = polyfillsAsset ? (await util.promisify(gzip)(polyfillsAsset.source())).byteLength : 0;
     const polyfillsSizeStr = (polyfillsSize / 1000).toPrecision(3) + 'kB';
 
     console.log(
-      `[${NAME}] Completed in ${totalTime}ms.${timingsStr}\n` +
+      preamble +
       `${polyfillsAsset._name} is ${polyfillsSizeStr} and bundles ${polyfills.length} polyfills:${polyfillsStr}`
     );
   }

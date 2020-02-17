@@ -1,4 +1,4 @@
-export default function ({ types: t }) {
+export default function () {
   return {
     name: 'transform-extract-polyfills',
     visitor: {

@@ -13,8 +13,13 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
+import { h } from 'preact';
 
-console.log('hello world');
-// /** @jsx h */
-// const h = (type, props, ...children) => ({ type, props, children });
-// console.log(<div>yes</div>);
+const HTML = `
+  This is a lovely website.
+  More specifically, you're looking at the About page.
+`;
+
+export default function Home () {
+  return h('pre', { id: 'home', dangerouslySetInnerHTML: { __html: HTML } });
+}

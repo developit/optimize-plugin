@@ -1,6 +1,7 @@
 import * as terser from 'terser';
 import babel from '@babel/core';
 import modernPreset from '@babel/preset-modules';
+import transformWebpackUrls from './lib/transform-change-webpack-urls';
 import extractPolyfills from './lib/transform-extract-polyfills';
 import { toBabelMap, toTerserMap, createPerformanceTimings } from './lib/util';
 
@@ -14,6 +15,11 @@ export async function process ({ file, source, map, options = {} }) {
   const { timings, start, end } = options.timings ? createPerformanceTimings() : noopTimings;
   const minify = options.minify;
   const downlevel = options.downlevel;
+
+  // console.log({
+  //   minify,
+  //   downlevel
+  // });
 
   const polyfills = new Set();
   let legacy;
@@ -43,6 +49,9 @@ export async function process ({ file, source, map, options = {} }) {
       [modernPreset, {
         loose: true
       }]
+      // [require('../../babel-preset-optimize'), {
+      //   loose: true
+      // }]
     ],
     ...outputOptions,
     caller: {
@@ -69,10 +78,10 @@ export async function process ({ file, source, map, options = {} }) {
         }
       },
       mangle: {
-        safari10: true,
-        properties: {
-          regex: /./
-        }
+        safari10: true
+        // properties: {
+        //   regex: /./
+        // }
       }
     });
 
@@ -86,7 +95,8 @@ export async function process ({ file, source, map, options = {} }) {
 
   if (downlevel) {
     start('legacy');
-    legacy = await babel.transformFromAstAsync(modern.ast, modern.code, {
+    // legacy = await babel.transformFromAstAsync(modern.ast, modern.code, {
+    legacy = await babel.transformAsync(modern.code, {
       configFile: false,
       babelrc: false,
       filename: file,
@@ -105,6 +115,10 @@ export async function process ({ file, source, map, options = {} }) {
         }]
       ],
       plugins: [
+        [transformWebpackUrls, {
+          pattern: /\.js$/,
+          replacement: '.legacy.js'
+        }],
         [extractPolyfills, {
           onPolyfill (specifier) {
             polyfills.add(specifier);
