@@ -1,3 +1,19 @@
+/**
+ * Detects and analyzes a Webpack "entry" bundle, allowing String transformations on its internal chunk URL map.
+ *
+ * @example
+ * {
+ *   plugins: [
+ *     ['./transform-change-webpack-urls', {
+ *       pattern: /\.js$/,
+ *       replacement: '.legacy.js'
+ *     }]
+ *   ]
+ * }
+ *
+ * @see https://astexplorer.net/#/gist/0995f8452cfa62d797a2a778a3442b65/2e588cc89829971495ca8e38905bb5581a23cf5d
+ */
+
 /** @typedef NodePath @type {import('@babel/core').NodePath} */
 
 export default function ({ types: t }) {
