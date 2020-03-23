@@ -61,9 +61,10 @@ export async function process ({ file, source, map, options = {} }) {
   });
   end('modern');
 
+  const { ast: originalAst } = modern;
   if (minify) {
     start('modern-minify');
-    const minified = terser.minify(modern.code, {
+    const minified = await terser.minify(modern.code, {
       ecma: 8,
       module: false,
       nameCache: TERSER_CACHE,
@@ -77,6 +78,9 @@ export async function process ({ file, source, map, options = {} }) {
           'process.env.NODE_ENV': global.process.env.NODE_ENV || 'production'
         }
       },
+      output: {
+        ast: true,
+      },
       mangle: {
         safari10: true
         // properties: {
@@ -86,6 +90,7 @@ export async function process ({ file, source, map, options = {} }) {
     });
 
     modern.code = minified.code;
+    modern.ast = minified.ast;
     modern.map = toBabelMap(minified.map);
 
     // @todo this means modern.ast is now out-of-sync with modern.code
@@ -95,8 +100,7 @@ export async function process ({ file, source, map, options = {} }) {
 
   if (downlevel) {
     start('legacy');
-    // legacy = await babel.transformFromAstAsync(modern.ast, modern.code, {
-    legacy = await babel.transformAsync(modern.code, {
+    legacy = await babel.transformFromAstAsync(originalAst, modern.code, {
       configFile: false,
       babelrc: false,
       filename: file,
