@@ -28,7 +28,7 @@ export async function process ({ file, source, map, options = {} }) {
     compact: minify,
     minified: minify,
     // envName: minify ? 'production' : 'development',
-    comments: minify ? false : null,
+    comments: minify ? false : undefined,
     generatorOpts: {
       concise: true
     }
