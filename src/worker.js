@@ -64,7 +64,7 @@ export async function process ({ file, source, map, options = {} }) {
   const { ast: originalAst } = modern;
   if (minify) {
     start('modern-minify');
-    const minified = await terser.minify(modern.code, {
+    const minified = terser.minify(modern.code, {
       ecma: 8,
       module: false,
       nameCache: TERSER_CACHE,
