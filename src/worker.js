@@ -90,9 +90,10 @@ export async function process ({ file, source, map, options = {} }) {
     });
 
     modern.code = minified.code;
-    modern.ast = minified.ast;
     modern.map = toBabelMap(minified.map);
 
+    // @todo this means modern.ast is now out-of-sync with modern.code
+    // can this work? or do we need to run Terser separately for modern/legacy?
     end('modern-minify');
   }
 
