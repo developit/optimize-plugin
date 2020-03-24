@@ -94,6 +94,7 @@
     "@babel/preset-modules": "^0.1.2",
     "@rollup/plugin-commonjs": "^11.0.1",
     "@rollup/plugin-node-resolve": "^7.0.0",
+    "babel-to-estree": "^0.0.3",
     "core-js": "^3.6.4",
     "gzip-size": "^5.1.1",
     "jest-worker": "^25.1.0",
