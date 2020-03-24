@@ -33,6 +33,11 @@ plugins: [
 | Option | Type | Description
 |---|---|---
 | `concurrency` | `number\|false` | Maximum number of threads to use. Default: the number of available CPUs. <br>_Pass `false` for single-threaded, sometimes faster for small projects._
+| `sourceMap` | `boolean\|false` | Whether or not to produce source maps for the given input. |
+| `minify` | `boolean\|false` | Minify using Terser, if turned off only comments will be stripped. |
+| `downlevel` | `boolean\|true` | Produces a bundle for `nomodule` browsers. (IE11, ...) |
+| `verbose` | `boolean\|false` | Will log performance information and information about polyfills. |
+| `polyfillsFilename` | `string\|polyfills.legacy.js` | The name for the chunk containing polyfills for the legacy bundle. |
 
 
 ## How does this work?
