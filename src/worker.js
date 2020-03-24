@@ -1,10 +1,12 @@
 import * as terser from 'terser';
 import babel from '@babel/core';
 import modernPreset from '@babel/preset-modules';
-import { toEstree } from 'babel-to-estree'
+import { toEstree } from 'babel-to-estree';
+import cloneDeep from 'lodash.clonedeep';
 import transformWebpackUrls from './lib/transform-change-webpack-urls';
 import extractPolyfills from './lib/transform-extract-polyfills';
 import { toBabelMap, toTerserMap, createPerformanceTimings } from './lib/util';
+
 
 const NAME = 'OptimizePlugin';
 
@@ -65,7 +67,7 @@ export async function process ({ file, source, map, options = {} }) {
   if (minify) {
     start('modern-minify');
     modern.ast.tokens = [];
-    const spidermonkey = toEstree(modern.ast, source);
+    const spidermonkey = toEstree(cloneDeep(modern.ast), source);
     const terserAst = terser.AST_Node.from_mozilla_ast(spidermonkey)
     const minified = terser.minify(terserAst, {
       ecma: 8,
@@ -99,9 +101,7 @@ export async function process ({ file, source, map, options = {} }) {
 
   if (downlevel) {
     start('legacy');
-    // TODO: we can reuse this ast again if we deepClone the previous one since toEsTree mutates.
-    // legacy = await babel.transformFromAstAsync(originalAst, modern.code, {
-    legacy = await babel.transformAsync(modern.code, {
+    legacy = await babel.transformFromAstAsync(modern.ast, modern.code, {
       configFile: false,
       babelrc: false,
       filename: file,
