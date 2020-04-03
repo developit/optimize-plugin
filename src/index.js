@@ -125,8 +125,8 @@ export default class OptimizePlugin {
 
     start('Optimize Assets');
     const transformed = await Promise.all(files.map(file => {
+      if (!file.endsWith('js')) return undefined;
       const asset = compilation.assets[file];
-
       let pending = processing.get(asset);
       if (pending) return pending;
 
@@ -159,7 +159,7 @@ export default class OptimizePlugin {
 
     const allPolyfills = new Set();
     const polyfillReasons = new Map();
-    transformed.forEach(({ file, modern, legacyFile, legacy, polyfills }, index) => {
+    transformed.filter(Boolean).forEach(({ file, modern, legacyFile, legacy, polyfills }, index) => {
       for (const p of polyfills) {
         allPolyfills.add(p);
         let reasons = polyfillReasons.get(p);
