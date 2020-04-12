@@ -126,7 +126,7 @@ export default class OptimizePlugin {
     start('Optimize Assets');
     let transformed;
     try {
-      const transformed = await Promise.all(files.map(file => {
+      transformed = await Promise.all(files.map(file => {
         if (!file.endsWith('js')) return undefined;
         const asset = compilation.assets[file];
         let pending = processing.get(asset);
