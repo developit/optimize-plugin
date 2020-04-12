@@ -124,37 +124,44 @@ export default class OptimizePlugin {
     const files = [...chunkFiles, ...chunkAssets];
 
     start('Optimize Assets');
-    const transformed = await Promise.all(files.map(file => {
-      if (!file.endsWith('js')) return undefined;
-      const asset = compilation.assets[file];
-      let pending = processing.get(asset);
-      if (pending) return pending;
+    let transformed;
+    try {
+      const transformed = await Promise.all(files.map(file => {
+        if (!file.endsWith('js')) return undefined;
+        const asset = compilation.assets[file];
+        let pending = processing.get(asset);
+        if (pending) return pending;
 
-      let source, map;
-      if (this.options.sourceMap && asset.sourceAndMap) {
-        ({ source, map } = asset.sourceAndMap());
-      } else {
-        source = asset.source();
-      }
-
-      const original = { file, source, map, options };
-      const result = this.workerPool.enqueue(original);
-      pending = result.then(this.buildResultSources.bind(this, original));
-      processing.set(asset, pending);
-
-      const t = ` └ ${file}`;
-      start(t);
-      result.then(r => {
-        for (const entry of r.timings) {
-          // entry.name = '    ' + entry.name;
-          entry.depth = 2;
-          timings.push(entry);
+        let source, map;
+        if (this.options.sourceMap && asset.sourceAndMap) {
+          ({ source, map } = asset.sourceAndMap());
+        } else {
+          source = asset.source();
         }
-        end(t);
-      });
 
-      return pending;
-    }));
+        const original = { file, source, map, options };
+        const result = this.workerPool.enqueue(original);
+        pending = result.then(this.buildResultSources.bind(this, original));
+        processing.set(asset, pending);
+
+        const t = ` └ ${file}`;
+        start(t);
+        result.then(r => {
+          for (const entry of r.timings) {
+            // entry.name = '    ' + entry.name;
+            entry.depth = 2;
+            timings.push(entry);
+          }
+          end(t);
+        });
+
+        return pending;
+      }));
+    } catch (e) {
+      console.log('errored out during transformation ', e);
+      throw e;
+    }
+
     end('Optimize Assets');
 
     const allPolyfills = new Set();
