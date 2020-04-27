@@ -64,7 +64,8 @@ export async function process ({ file, source, map, options = {} }) {
   if (minify) {
     start('modern-minify');
     const minified = terser.minify(modern.code, {
-      ecma: 8,
+      // Enables shorthand properties in objects and object patterns:
+      ecma: 9,
       module: false,
       nameCache: TERSER_CACHE,
       // sourceMap: true,
@@ -77,8 +78,12 @@ export async function process ({ file, source, map, options = {} }) {
           'process.env.NODE_ENV': global.process.env.NODE_ENV || 'production'
         }
       },
+      // Fix Safari 10 issues
+      // ({a}) --> ({a:a})
+      // !await a --> !(await a)
+      safari10: true,
       mangle: {
-        safari10: true
+        // safari10: true
         // properties: {
         //   regex: /./
         // }
