@@ -12,14 +12,8 @@ const TERSER_CACHE = {};
 const noopTimings = { timings: [], start: n => {}, end: n => {} };
 
 export async function process ({ file, source, map, options = {} }) {
+  const { minify, downlevel } = options;
   const { timings, start, end } = options.timings ? createPerformanceTimings() : noopTimings;
-  const minify = options.minify;
-  const downlevel = options.downlevel;
-
-  // console.log({
-  //   minify,
-  //   downlevel
-  // });
 
   const polyfills = new Set();
   let legacy;
@@ -27,7 +21,6 @@ export async function process ({ file, source, map, options = {} }) {
   const outputOptions = {
     compact: minify,
     minified: minify,
-    // envName: minify ? 'production' : 'development',
     comments: minify ? false : undefined,
     generatorOpts: {
       concise: true
@@ -44,14 +37,11 @@ export async function process ({ file, source, map, options = {} }) {
     sourceFileName: file,
     sourceType: 'module',
     envName: 'modern',
-    ast: true,
+    ast: false,
     presets: [
       [modernPreset, {
         loose: true
       }]
-      // [require('../../babel-preset-optimize'), {
-      //   loose: true
-      // }]
     ],
     ...outputOptions,
     caller: {
@@ -67,7 +57,6 @@ export async function process ({ file, source, map, options = {} }) {
       ecma: 8,
       module: false,
       nameCache: TERSER_CACHE,
-      // sourceMap: true,
       sourceMap: {
         content: toTerserMap(modern.map)
       },
@@ -79,9 +68,6 @@ export async function process ({ file, source, map, options = {} }) {
       },
       mangle: {
         safari10: true
-        // properties: {
-        //   regex: /./
-        // }
       }
     });
 
@@ -95,7 +81,7 @@ export async function process ({ file, source, map, options = {} }) {
 
   if (downlevel) {
     start('legacy');
-    // legacy = await babel.transformFromAstAsync(modern.ast, modern.code, {
+    // TODO: I think we need to perform this on source
     legacy = await babel.transformAsync(modern.code, {
       configFile: false,
       babelrc: false,
@@ -131,6 +117,8 @@ export async function process ({ file, source, map, options = {} }) {
         name: NAME + '-legacy'
       }
     });
+
+    // TODO: I think we need to add a minify step here.
     end('legacy');
   }
 
