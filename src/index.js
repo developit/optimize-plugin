@@ -14,7 +14,6 @@
  * the License.
  */
 
-import path from 'path';
 import util from 'util';
 import { gzip } from 'zlib';
 import { promises as fs } from 'fs';
@@ -43,15 +42,23 @@ const DEFAULT_OPTIONS = {
    */
   sourceMap: false,
 
-  /** Minify bundles using Terser?
+  /**
+   * Minify bundles using Terser?
    * @default true
    */
   minify: true,
 
-  /** Produce a set of bundles catering to older browsers alongside the default modern bundles.
+  /**
+   * Produce a set of bundles catering to older browsers alongside the default modern bundles.
    * @default true
    */
   downlevel: true,
+
+  /**
+   * Attempt to upgrade ES5 syntax to equivalent modern syntax.
+   * @default true
+   */
+  modernize: true,
 
   /**
    * Show logs containing performance information and inlined polyfill.
@@ -112,6 +119,7 @@ export default class OptimizePlugin {
       corejsVersion: getCorejsVersion(),
       minify: this.options.minify,
       downlevel: this.options.downlevel,
+      modernize: this.options.modernize,
       timings: this.options.verbose
     };
 
@@ -276,12 +284,6 @@ export default class OptimizePlugin {
           dedupe: nonCoreJsPolyfills,
           only: nonCoreJsPolyfills,
           preferBuiltins: false
-          // rootDir: cwd,
-          // customResolveOptions: {
-          //   paths: [
-          //     path.resolve(__dirname, '../node_modules')
-          //   ]
-          // }
         }),
         // {
         //   name: 'babel',
@@ -291,7 +293,7 @@ export default class OptimizePlugin {
         //       minified: true,
         //       shouldPrintComment: () => false,
         //       presets: [
-        //         require('../../babel-preset-optimize')
+        //         require('babel-preset-modernize')
         //       ]
         //     });
         //   }
