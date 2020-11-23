@@ -1,6 +1,6 @@
 import * as terser from 'terser';
 import babel from '@babel/core';
-import modernPreset from '@babel/preset-modules';
+// import modernPreset from '@babel/preset-modules';
 import transformWebpackUrls from './lib/transform-change-webpack-urls';
 import extractPolyfills from './lib/transform-extract-polyfills';
 import { toBabelMap, toTerserMap, createPerformanceTimings } from './lib/util';
@@ -11,15 +11,21 @@ const TERSER_CACHE = {};
 
 const noopTimings = { timings: [], start: n => {}, end: n => {} };
 
+/**
+ * @param {object} $0
+ * @param {string} $0.file
+ * @param {string} $0.source
+ * @param {string|object} $0.map
+ * @param {object} [$0.options]
+ * @param {boolean} [$0.options.timings = false]
+ * @param {boolean} [$0.options.minify = false]
+ * @param {boolean} [$0.options.downlevel = false]
+ * @param {boolean} [$0.options.modernize = false]
+ * @param {number} [$0.options.corejsVersion]
+ */
 export async function process ({ file, source, map, options = {} }) {
   const { timings, start, end } = options.timings ? createPerformanceTimings() : noopTimings;
-  const minify = options.minify;
-  const downlevel = options.downlevel;
-
-  // console.log({
-  //   minify,
-  //   downlevel
-  // });
+  const { minify, downlevel, modernize } = options;
 
   const polyfills = new Set();
   let legacy;
@@ -44,15 +50,26 @@ export async function process ({ file, source, map, options = {} }) {
     sourceFileName: file,
     sourceType: 'module',
     envName: 'modern',
-    ast: true,
+    // ast: true,
     presets: [
-      [modernPreset, {
-        loose: true
-      }]
-      // [require('../../babel-preset-optimize'), {
+      // [modernPreset, {
       //   loose: true
       // }]
-    ],
+      ['@babel/preset-env', {
+        loose: true,
+        modules: false,
+        bugfixes: true,
+        targets: {
+          esmodules: true
+        },
+        // corejs: options.corejsVersion,
+        useBuiltIns: false
+      }],
+      modernize && ['babel-preset-modernize', {
+        loose: true,
+        webpack: true
+      }]
+    ].filter(Boolean),
     ...outputOptions,
     caller: {
       supportsStaticESM: true,
@@ -65,7 +82,7 @@ export async function process ({ file, source, map, options = {} }) {
     start('modern-minify');
     const minified = terser.minify(modern.code, {
       // Enables shorthand properties in objects and object patterns:
-      ecma: 9,
+      ecma: 2017,
       module: false,
       nameCache: TERSER_CACHE,
       // sourceMap: true,
