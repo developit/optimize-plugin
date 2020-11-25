@@ -1,6 +1,21 @@
+/**
+ * Copyright 2020 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import * as terser from 'terser';
 import babel from '@babel/core';
-import modernPreset from '@babel/preset-modules';
 import transformWebpackUrls from './lib/transform-change-webpack-urls';
 import extractPolyfills from './lib/transform-extract-polyfills';
 import { toBabelMap, toTerserMap, createPerformanceTimings } from './lib/util';
@@ -11,9 +26,22 @@ const TERSER_CACHE = {};
 
 const noopTimings = { timings: [], start: n => {}, end: n => {} };
 
+/**
+ * @param {object} $0
+ * @param {string} $0.file
+ * @param {string} $0.source
+ * @param {string|object} $0.map
+ * @param {object} [$0.options]
+ * @param {boolean} [$0.options.timings = false]
+ * @param {boolean} [$0.options.minify = false]
+ * @param {boolean} [$0.options.downlevel = false]
+ * @param {boolean} [$0.options.modernize = false]
+ * @param {number} [$0.options.corejsVersion]
+ */
 export async function process ({ file, source, map, options = {} }) {
   const { minify, downlevel } = options;
   const { timings, start, end } = options.timings ? createPerformanceTimings() : noopTimings;
+  const { minify, downlevel, modernize } = options;
 
   const polyfills = new Set();
   let legacy;
@@ -38,11 +66,23 @@ export async function process ({ file, source, map, options = {} }) {
     sourceType: 'module',
     envName: 'modern',
     ast: false,
+    // ast: true,
     presets: [
-      [modernPreset, {
-        loose: true
+      ['@babel/preset-env', {
+        loose: true,
+        modules: false,
+        bugfixes: true,
+        targets: {
+          esmodules: true
+        },
+        // corejs: options.corejsVersion,
+        useBuiltIns: false
+      }],
+      modernize && ['babel-preset-modernize', {
+        loose: true,
+        webpack: true
       }]
-    ],
+    ].filter(Boolean),
     ...outputOptions,
     caller: {
       supportsStaticESM: true,
@@ -54,7 +94,8 @@ export async function process ({ file, source, map, options = {} }) {
   if (minify) {
     start('modern-minify');
     const minified = terser.minify(modern.code, {
-      ecma: 8,
+      // Enables shorthand properties in objects and object patterns:
+      ecma: 2017,
       module: false,
       nameCache: TERSER_CACHE,
       sourceMap: {
@@ -66,9 +107,11 @@ export async function process ({ file, source, map, options = {} }) {
           'process.env.NODE_ENV': global.process.env.NODE_ENV || 'production'
         }
       },
-      mangle: {
-        safari10: true
-      }
+      // Fix Safari 10 issues
+      // ({a}) --> ({a:a})
+      // !await a --> !(await a)
+      safari10: true,
+      mangle: {}
     });
 
     modern.code = minified.code;

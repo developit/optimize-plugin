@@ -1,5 +1,5 @@
 /**
- * Copyright 2018 Google LLC
+ * Copyright 2020 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -74,19 +74,6 @@ export function runWebpack (fixture, { output = {}, plugins = [], module = {}, r
       rules: [].concat(module.rules || [])
     },
     resolve,
-    // optimization: {
-    //   minimizer: [
-    //     new TerserPlugin({
-    //       terserOptions: {
-    //         mangle: false,
-    //         output: {
-    //           beautify: true
-    //         }
-    //       },
-    //       sourceMap: false
-    //     })
-    //   ]
-    // },
     plugins: [
       new CleanPlugin([
         path.resolve(__dirname, 'fixtures', fixture, 'dist', '**')
@@ -107,23 +94,8 @@ export function watchWebpack (fixture, { output, plugins, context, ...config } =
       path: path.resolve(context, 'dist'),
       ...(output || {})
     },
-    // optimization: {
-    //   minimize: true,
-    //   minimizer: [
-    //     new TerserPlugin({
-    //       terserOptions: {
-    //         mangle: false,
-    //         output: {
-    //           beautify: true
-    //         }
-    //       },
-    //       sourceMap: false
-    //     })
-    //   ]
-    // },
     plugins: plugins || []
   });
-  // compiler.watch({});
   compiler.doRun = () => run(compiler.run.bind(compiler));
   return compiler;
 }
