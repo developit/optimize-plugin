@@ -39,7 +39,6 @@ const noopTimings = { timings: [], start: n => {}, end: n => {} };
  * @param {number} [$0.options.corejsVersion]
  */
 export async function process ({ file, source, map, options = {} }) {
-  const { minify, downlevel } = options;
   const { timings, start, end } = options.timings ? createPerformanceTimings() : noopTimings;
   const { minify, downlevel, modernize } = options;
 
