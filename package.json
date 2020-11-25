@@ -61,17 +61,10 @@
     "minify",
     "optimize"
   ],
-  "author": "The Chromium Authors",
-  "contributors": [
-    {
-      "name": "Jason Miller",
-      "email": "developit@google.com"
-    }
-  ],
+  "author": "Jason Miller (https://github.com/developit)",
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/jest": "^26.0.15",
-    "ast-types": "^0.13.4",
     "babel-plugin-transform-es2015-modules-commonjs": "^6.26.2",
     "clean-webpack-plugin": "^1.0.0",
     "eslint": "^7.14.0",
