@@ -14,6 +14,12 @@ Put simply: it compiles code faster, better and smaller.
 - Removes unnecessary polyfills, even when inlined into dependencies
 - Builds a highly-optimized automated polyfills bundle
 
+## Install
+
+```sh
+npm install --save-dev optimize-plugin
+```
+
 ## Usage
 
 First, disable any existing configuration you have to Babel, minification, and module/nomodule.
