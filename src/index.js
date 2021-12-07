@@ -237,7 +237,7 @@ export default class OptimizePlugin {
   async generatePolyfillsChunk (polyfills, cwd, timings) {
     const ENTRY = '\0entry';
 
-    const entryContent = polyfills.reduce((str, p) => `${str}\nimport "${p}";`, '');
+    const entryContent = polyfills.reduce((str, p) => `${str}\nimport "${p.replace('.js', '')}";`, '');
 
     const COREJS = require.resolve('core-js/package.json').replace('package.json', '');
     const isCoreJsPath = /(?:^|\/)core-js\/(.+)$/;
@@ -306,11 +306,13 @@ export default class OptimizePlugin {
         //     });
         //   }
         // },
-        this.options.minify ? (
-          rollupPluginTerserSimple()
-        ) : (
-          rollupPluginStripComments()
-        )
+        this.options.minify
+          ? (
+            rollupPluginTerserSimple()
+          )
+          : (
+            rollupPluginStripComments()
+          )
       ].filter(Boolean)
     });
     this.setRollupCache(polyfillsBundle.cache);
