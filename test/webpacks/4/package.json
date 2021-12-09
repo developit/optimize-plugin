@@ -1,0 +1,8 @@
+{
+  "name": "webpack-4",
+  "version": "1.0.0",
+  "dependencies": {
+    "ts-loader": "^8.3.0",
+    "webpack": "^4.46.0"
+  }
+}
