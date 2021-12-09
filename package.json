@@ -79,9 +79,9 @@
     "microbundle": "^0.12.4",
     "preact": "^10.5.7",
     "sucrase": "^3.16.0",
-    "terser-webpack-plugin": "^1.4.5",
-    "ts-loader": "^6.2.2",
-    "webpack": "^4.44.2"
+    "ts-loader": "^9.2.6",
+    "webpack": "^5.65.0",
+    "webpack-4": "./test/webpacks/4"
   },
   "dependencies": {
     "@babel/core": "^7.12.7",
@@ -94,8 +94,8 @@
     "magic-string": "^0.25.7",
     "regenerator-runtime": "^0.13.7",
     "rollup": "^1.32.1",
-    "terser": "^4.8.0",
-    "webpack-sources": "^1.4.3"
+    "terser": "^5.10.0",
+    "webpack-sources": "^3.2.2"
   },
   "peerDependencies": {
     "@babel/preset-env": ">= 7.10",
