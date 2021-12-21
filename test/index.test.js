@@ -24,6 +24,24 @@ jest.setTimeout(30000);
 const concurrency = false;
 
 describe('optimize-plugin', () => {
+  const $console = {
+    log: console.log,
+    warn: console.warn,
+    info: console.info
+  };
+
+  beforeAll(() => {
+    console.warn = () => 0;
+    console.log = () => 0;
+    console.info = () => 0;
+  });
+
+  afterAll(() => {
+    console.warn = $console.warn;
+    console.log = $console.log;
+    console.info = $console.info;
+  });
+
   test('exports a class', () => {
     expect(OptimizePlugin).toBeInstanceOf(Function);
     expect(OptimizePlugin.prototype).toHaveProperty('apply', expect.any(Function));
@@ -42,7 +60,7 @@ describe('optimize-plugin', () => {
       plugins: [
         new OptimizePlugin({ concurrency })
       ]
-    });
+    }, $console);
 
     const assetNames = Object.keys(stats.assets);
     expect(assetNames).toHaveLength(3);
@@ -61,7 +79,7 @@ describe('optimize-plugin', () => {
     expect(polyfills).toMatch(/Object\.defineProperty/g);
     expect(polyfills).not.toMatch(/require\(/g);
 
-    await printSizes(stats.assets, '"it works"');
+    await printSizes(stats.assets, '"it works"', $console);
   });
 
   test('code splitting', async () => {
@@ -72,7 +90,7 @@ describe('optimize-plugin', () => {
       plugins: [
         new OptimizePlugin({ concurrency })
       ]
-    });
+    }, $console);
 
     const assetNames = Object.keys(stats.assets);
     expect(assetNames).toHaveLength(9);
@@ -97,7 +115,7 @@ describe('optimize-plugin', () => {
     expect(polyfills).toMatch(/Object\.defineProperty/g);
     expect(polyfills).not.toMatch(/require\(/g);
 
-    await printSizes(stats.assets, 'code splitting');
+    await printSizes(stats.assets, 'code splitting', $console);
   });
 
   describe('TypeScript Support', () => {
@@ -120,7 +138,7 @@ describe('optimize-plugin', () => {
         plugins: [
           new OptimizePlugin({ concurrency })
         ]
-      });
+      }, $console);
 
       const assetNames = Object.keys(stats.assets);
       expect(assetNames).toHaveLength(3);
@@ -139,7 +157,7 @@ describe('optimize-plugin', () => {
       expect(polyfills).toMatch(/Object\.defineProperty/g);
       expect(polyfills).not.toMatch(/require\(/g);
 
-      await printSizes(stats.assets, 'typescript support');
+      await printSizes(stats.assets, 'typescript support', $console);
     });
 
     test('using Sucrase', async () => {
@@ -158,7 +176,7 @@ describe('optimize-plugin', () => {
         plugins: [
           new OptimizePlugin({ concurrency })
         ]
-      });
+      }, $console);
 
       const assetNames = Object.keys(stats.assets);
       expect(assetNames).toHaveLength(3);
@@ -177,7 +195,7 @@ describe('optimize-plugin', () => {
       expect(polyfills).toMatch(/Object\.defineProperty/g);
       expect(polyfills).not.toMatch(/require\(/g);
 
-      await printSizes(stats.assets, 'sucrase');
+      await printSizes(stats.assets, 'sucrase', $console);
     });
   });
 });
