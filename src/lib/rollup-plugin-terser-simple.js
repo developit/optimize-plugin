@@ -20,8 +20,8 @@ import { toBabelMap } from './util';
 export default function rollupPluginTerserSimple () {
   return {
     name: 'rollup-plugin-terser-simple',
-    renderChunk (source, chunk, options) {
-      const { code, map } = terser.minify(source, {
+    async renderChunk (source, chunk, options) {
+      const { code, map } = await terser.minify(source, {
         compress: {
           global_defs: {
             'typeof self': '"object"',

@@ -15,3 +15,7 @@
  */
 
 console.log('hello world');
+
+Object.defineProperty(window, 'test', {
+  value: 'hello world'
+});
