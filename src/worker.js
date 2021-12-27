@@ -112,6 +112,7 @@ export async function process ({ file, source, map, options = {} }) {
       // !await a --> !(await a)
       safari10: true,
       mangle: {
+        toplevel: true
         // safari10: true
         // properties: {
         //   regex: /./
