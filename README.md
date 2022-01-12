@@ -14,6 +14,12 @@ Put simply: it compiles code faster, better and smaller.
 - Removes unnecessary polyfills, even when inlined into dependencies
 - Builds a highly-optimized automated polyfills bundle
 
+## Install
+
+```sh
+npm install --save-dev optimize-plugin
+```
+
 ## Usage
 
 First, disable any existing configuration you have to Babel, minification, and module/nomodule.
@@ -36,6 +42,7 @@ plugins: [
 | `sourceMap` | `boolean\|false` | Whether or not to produce source maps for the given input. |
 | `minify` | `boolean\|false` | Minify using Terser, if turned off only comments will be stripped. |
 | `downlevel` | `boolean\|true` | Produces a bundle for `nomodule` browsers. (IE11, ...) |
+| `modernize` | `boolean\|true` | Attempt to upgrade ES5 syntax to equivalent modern syntax. |
 | `verbose` | `boolean\|false` | Will log performance information and information about polyfills. |
 | `polyfillsFilename` | `string\|polyfills.legacy.js` | The name for the chunk containing polyfills for the legacy bundle. |
 

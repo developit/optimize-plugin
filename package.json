@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Webpack plugin to optimize bundles.",
   "main": "dist/optimize-plugin.js",
-  "repository": "GoogleChromeLabs/optimize-plugin",
+  "repository": "developit/optimize-plugin",
   "scripts": {
     "build": "microbundle --target node --format cjs --no-compress src/*.js",
     "prepack": "npm run build",
