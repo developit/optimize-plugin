@@ -17,7 +17,7 @@
 import util from 'util';
 import { gzip } from 'zlib';
 import { promises as fs } from 'fs';
-import * as webpack from 'webpack';
+import * as defaultWebpack from 'webpack';
 import { SourceMapSource, RawSource } from 'webpack-sources';
 import { rollup } from 'rollup';
 import commonjsPlugin from '@rollup/plugin-commonjs';
@@ -75,7 +75,8 @@ export default class OptimizePlugin {
   /**
    * @param {Partial<DEFAULT_OPTIONS>?} [options]
    */
-  constructor (options) {
+  constructor (options, webpack = defaultWebpack) {
+    this.webpack = webpack;
     this.options = Object.assign({}, options || {});
     for (const i in DEFAULT_OPTIONS) {
       if (this.options[i] == null) this.options[i] = DEFAULT_OPTIONS[i];
@@ -104,14 +105,18 @@ export default class OptimizePlugin {
   }
 
   isWebpack4 () {
-    return webpack.version[0] === '4';
+    return this.webpack.version[0] === '4';
+  }
+
+  isWebpack5 () {
+    return this.webpack.version[0] === '5';
   }
 
   serializeOptions () {
     return this._serialized || (this._serialized = JSON.stringify(this.options));
   }
 
-  async optimize (compiler, compilation, chunks) {
+  async optimize (compiler, compilation, chunkFiles) {
     const cwd = compiler.context;
     const { timings, start, end } = createPerformanceTimings();
 
@@ -124,10 +129,6 @@ export default class OptimizePlugin {
     };
 
     const processing = new WeakMap();
-    const chunkFiles = Array.from(chunks).reduce(
-      (acc, chunk) => acc.concat(Array.from(chunk.files || [])),
-      []
-    );
     const chunkAssets = Array.from(compilation.additionalChunkAssets || []);
     const files = [...chunkFiles, ...chunkAssets];
 
@@ -150,7 +151,7 @@ export default class OptimizePlugin {
         const original = { file, source, map, options };
         // @ts-ignore-next
         const result = this.workerPool.enqueue(original);
-        pending = result.then(this.buildResultSources.bind(this, original));
+        pending = result.then(this.buildResultSources.bind(this, original)).catch(console.error);
         processing.set(asset, pending);
 
         const t = ` └ ${file}`;
@@ -237,7 +238,7 @@ export default class OptimizePlugin {
   async generatePolyfillsChunk (polyfills, cwd, timings) {
     const ENTRY = '\0entry';
 
-    const entryContent = polyfills.reduce((str, p) => `${str}\nimport "${p}";`, '');
+    const entryContent = polyfills.reduce((str, p) => `${str}\nimport "${p.replace('.js', '')}";`, '');
 
     const COREJS = require.resolve('core-js/package.json').replace('package.json', '');
     const isCoreJsPath = /(?:^|\/)core-js\/(.+)$/;
@@ -306,11 +307,13 @@ export default class OptimizePlugin {
         //     });
         //   }
         // },
-        this.options.minify ? (
-          rollupPluginTerserSimple()
-        ) : (
-          rollupPluginStripComments()
-        )
+        this.options.minify
+          ? (
+            rollupPluginTerserSimple()
+          )
+          : (
+            rollupPluginStripComments()
+          )
       ].filter(Boolean)
     });
     this.setRollupCache(polyfillsBundle.cache);
@@ -447,14 +450,33 @@ export default class OptimizePlugin {
       compilation.chunkTemplate.hooks.hashForChunk.tap(NAME, updateWithHash.bind(null, null));
     } else {
       // @ts-ignore
-      webpack.javascript.JavascriptModulesPlugin.getCompilationHooks(compilation).chunkHash.tap(NAME, updateWithHash);
+      this.webpack.javascript.JavascriptModulesPlugin.getCompilationHooks(compilation).chunkHash.tap(NAME, updateWithHash);
     }
   }
 
   apply (compiler) {
     compiler.hooks.compilation.tap(NAME, compilation => {
       this.updateChunkHash(compilation);
-      compilation.hooks.optimizeChunkAssets.tapPromise(NAME, this.optimize.bind(this, compiler, compilation));
+
+      if (this.isWebpack5()) {
+        compilation.hooks.processAssets.tapPromise({
+          name: NAME,
+          stage: this.webpack.Compilation.PROCESS_ASSETS_STAGE_OPTIMIZE
+        }, (assets) => {
+          const chunkFiles = Object.keys(assets);
+
+          return this.optimize(compiler, compilation, chunkFiles);
+        });
+      } else {
+        compilation.hooks.optimizeChunkAssets.tapPromise(NAME, (chunks) => {
+          const chunkFiles = Array.from(chunks).reduce(
+            (acc, chunk) => acc.concat(Array.from(chunk.files || [])),
+            []
+          );
+
+          return this.optimize(compiler, compilation, chunkFiles);
+        });
+      }
     });
   }
 }

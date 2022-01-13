@@ -14,12 +14,11 @@
  * the License.
  */
 
+import { promises as fs } from 'fs';
 import path from 'path';
 import { gzip as gzipSync } from 'zlib';
 import util from 'util';
-import webpack from 'webpack';
 import CleanPlugin from 'clean-webpack-plugin';
-// import TerserPlugin from 'terser-webpack-plugin';
 
 export function sleep (ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -28,7 +27,7 @@ export function sleep (ms) {
 const gzip = util.promisify(gzipSync);
 const gzipSize = async x => (await gzip(x)).byteLength;
 
-export async function printSizes (assets, name) {
+export async function printSizes (assets, name, console) {
   let modernSize = 0;
   let legacySize = 0;
   const prettyBytes = (size) => {
@@ -58,7 +57,7 @@ export async function printSizes (assets, name) {
   console.log(str);
 }
 
-export function runWebpack (fixture, { output = {}, plugins = [], module = {}, resolve = {}, ...config } = {}) {
+export function runWebpack (webpack, fixture, { output = {}, plugins = [], module = {}, resolve = {}, ...config } = {}, console) {
   return run(callback => webpack({
     mode: 'production',
     devtool: false,
@@ -80,10 +79,10 @@ export function runWebpack (fixture, { output = {}, plugins = [], module = {}, r
       ])
     ].concat(plugins || []),
     ...config
-  }, callback));
+  }, callback), console);
 }
 
-export function watchWebpack (fixture, { output, plugins, context, ...config } = {}) {
+export function watchWebpack (webpack, fixture, { output, plugins, context, ...config } = {}, console) {
   context = context || path.resolve(__dirname, 'fixtures', fixture);
   const compiler = webpack({
     mode: 'production',
@@ -96,24 +95,31 @@ export function watchWebpack (fixture, { output, plugins, context, ...config } =
     },
     plugins: plugins || []
   });
-  compiler.doRun = () => run(compiler.run.bind(compiler));
+  compiler.doRun = () => run(compiler.run.bind(compiler), console);
   return compiler;
 }
 
-export function statsWithAssets (stats) {
-  stats.assets = Object.keys(stats.compilation.assets).reduce((acc, name) => {
-    acc[name] = stats.compilation.assets[name].source();
-    return acc;
-  }, {});
-  return stats;
+export async function statsWithAssets (stats) {
+  const assets = Object.keys(stats.compilation.assets);
+  const basePath = stats.compilation.outputOptions.path;
+  const contents = {};
+
+  await Promise.all(assets.map(async (asset) => {
+    const assetPath = path.join(basePath, asset);
+    const content = await fs.readFile(assetPath, 'utf8');
+
+    contents[asset] = content;
+  }));
+
+  stats.assets = contents;
 }
 
-function run (runner) {
+function run (runner, console) {
   return new Promise((resolve, reject) => {
-    runner((err, stats) => {
+    runner(async (err, stats) => {
       if (err) return reject(err);
 
-      statsWithAssets(stats);
+      await statsWithAssets(stats);
 
       stats.info = stats.toJson({ assets: true, chunks: true });
 

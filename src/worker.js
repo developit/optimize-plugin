@@ -92,7 +92,7 @@ export async function process ({ file, source, map, options = {} }) {
 
   if (minify) {
     start('modern-minify');
-    const minified = terser.minify(modern.code, {
+    const minified = await terser.minify(modern.code, {
       // Enables shorthand properties in objects and object patterns:
       ecma: 2017,
       module: false,
