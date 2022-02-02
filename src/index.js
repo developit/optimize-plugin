@@ -136,7 +136,8 @@ export default class OptimizePlugin {
     let transformed;
     try {
       transformed = await Promise.all(files.map(file => {
-        if (!file.endsWith('js')) return undefined;
+        // ignore non-JS files
+        if (!file.match(/\.m?[jt]sx?$/i)) return undefined;
         const asset = compilation.assets[file];
         let pending = processing.get(asset);
         if (pending) return pending;
@@ -405,7 +406,7 @@ export default class OptimizePlugin {
 
   /** @todo Support other file extensions */
   toLegacyFilename (file) {
-    let out = file.replace(/(\.m?js)$/g, '.legacy$1');
+    let out = file.replace(/(\.m?[jt]sx?)$/g, '.legacy$1');
     if (out === file) {
       // this will create `foo.js.legacy.js`, but it's the best we can hope for.
       out += '.legacy.js';
