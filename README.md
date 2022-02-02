@@ -63,6 +63,18 @@ handles graph creation and reduction, then passes its bundles to Babel for trans
 
 <img src="https://user-images.githubusercontent.com/105127/74685954-0cd21a80-519e-11ea-99f9-8fa5f3aef1b8.png">
 
+## FAQ
+
+### What do I do with my current Babel configuration?
+
+In order to migrate to optimize-plugin, you'll need to move your babel configuration into a `.babelrc` or `babel.config.js` file and remove `babel-loader` from your Webpack configuration. Remember, optimize-plugin only uses your babel configuration when generating _modern_ bundles. Legacy bundles are automatically compiled to ES5 without looking at your Babel configuration, though you can customize their compilation by defining a [browserslist](https://github.com/browserslist/browserslist) field in your package.json.
+
+### Do I need to include any polyfills manually?
+
+In general, adopting optimize-plugin means removing all of your current polyfills, since the plugin automatically detects and polyfills JavaScript features for legacy bundles. The plugin does _not_ polyfill DOM features though, so be sure to keep including any DOM polyfills your application relies (`ParentNode.append()`, Module Workers, etc).
+
+Remember: the premise of this plugin is that you don't need to configure JS transpilation or polyfills - it's all done automatically based on usage.
+
 ### License
 
 Apache-2.0
