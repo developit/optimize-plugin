@@ -68,7 +68,13 @@ const DEFAULT_OPTIONS = {
   /**
    * @default "polyfills.legacy.js"
    */
-  polyfillsFilename: 'polyfills.legacy.js'
+  polyfillsFilename: 'polyfills.legacy.js',
+
+  /**
+   * RegExp patterns of assets to exclude
+   * @default []
+   */
+  exclude: []
 };
 
 export default class OptimizePlugin {
@@ -130,7 +136,15 @@ export default class OptimizePlugin {
 
     const processing = new WeakMap();
     const chunkAssets = Array.from(compilation.additionalChunkAssets || []);
-    const files = [...chunkFiles, ...chunkAssets];
+    const files = [...chunkFiles, ...chunkAssets]
+      .filter((asset) => {
+        for (const pattern of this.options.exclude) {
+          if (pattern.test(asset)) {
+            return false;
+          }
+        }
+        return true;
+      });
 
     start('Optimize Assets');
     let transformed;
