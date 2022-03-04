@@ -45,6 +45,7 @@ plugins: [
 | `modernize` | `boolean\|true` | Attempt to upgrade ES5 syntax to equivalent modern syntax. |
 | `verbose` | `boolean\|false` | Will log performance information and information about polyfills. |
 | `polyfillsFilename` | `string\|polyfills.legacy.js` | The name for the chunk containing polyfills for the legacy bundle. |
+| `exclude` | `RegExp[]\|[]` | Asset patterns that should be excluded |
 
 
 ## How does this work?
