@@ -88,11 +88,6 @@ export default class OptimizePlugin {
       if (this.options[i] == null) this.options[i] = DEFAULT_OPTIONS[i];
     }
 
-    this.workerPool = new WorkerPool({
-      workerPath: require.resolve('./worker'),
-      concurrency: this.options.concurrency
-    });
-
     // const { concurrency } = options;
     // const workerPath = require.resolve('./worker');
     // if (concurrency === 0 || concurrency === false) {
@@ -470,6 +465,11 @@ export default class OptimizePlugin {
   }
 
   apply (compiler) {
+    this.workerPool = new WorkerPool({
+      workerPath: require.resolve('./worker'),
+      concurrency: this.options.concurrency
+    });
+
     compiler.hooks.compilation.tap(NAME, compilation => {
       this.updateChunkHash(compilation);
 
