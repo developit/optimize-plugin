@@ -40,7 +40,7 @@ plugins: [
 |---|---|---
 | `concurrency` | `number\|false` | Maximum number of threads to use. Default: the number of available CPUs. <br>_Pass `false` for single-threaded, sometimes faster for small projects._
 | `sourceMap` | `boolean\|false` | Whether or not to produce source maps for the given input. |
-| `minify` | `boolean\|false` | Minify using Terser, if turned off only comments will be stripped. |
+| `minify` | `boolean\|true` | Minify using Terser, if turned off only comments will be stripped. |
 | `downlevel` | `boolean\|true` | Produces a bundle for `nomodule` browsers. (IE11, ...) |
 | `modernize` | `boolean\|true` | Attempt to upgrade ES5 syntax to equivalent modern syntax. |
 | `verbose` | `boolean\|false` | Will log performance information and information about polyfills. |
